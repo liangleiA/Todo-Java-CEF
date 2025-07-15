@@ -1,0 +1,201 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+  <modelVersion>4.0.0</modelVersion>
+
+  <groupId>org.demo</groupId>
+  <artifactId>todo-java-cef</artifactId>
+  <version>1.0-SNAPSHOT</version>
+
+  <properties>
+    <maven.compiler.source>17</maven.compiler.source>
+    <maven.compiler.target>17</maven.compiler.target>
+    <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+  </properties>
+
+  <dependencies>
+    <dependency>
+      <groupId>me.friwi</groupId>
+      <artifactId>jcefmaven</artifactId>
+      <version>110.0.25.1</version>
+    </dependency>
+    
+    <!-- 全局快捷键支持 -->
+    <dependency>
+      <groupId>com.github.kwhat</groupId>
+      <artifactId>jnativehook</artifactId>
+      <version>2.2.2</version>
+    </dependency>
+    
+    <!-- 日志框架 -->
+    <dependency>
+      <groupId>org.slf4j</groupId>
+      <artifactId>slf4j-api</artifactId>
+      <version>1.7.36</version>
+    </dependency>
+    <dependency>
+      <groupId>ch.qos.logback</groupId>
+      <artifactId>logback-classic</artifactId>
+      <version>1.2.11</version>
+    </dependency>
+    <dependency>
+      <groupId>ch.qos.logback</groupId>
+      <artifactId>logback-core</artifactId>
+      <version>1.2.11</version>
+    </dependency>
+  </dependencies>
+
+  <repositories>
+    <repository>
+      <id>tencent</id>
+      <name>tencent</name>
+      <layout>default</layout>
+      <url>http://mirrors.cloud.tencent.com/nexus/repository/maven-public/</url>
+      <snapshots>
+        <enabled>false</enabled>
+      </snapshots>
+      <releases>
+        <enabled>true</enabled>
+      </releases>
+    </repository>
+    <repository>
+      <id>nexus</id>
+      <name>Nexus</name>
+      <layout>default</layout>
+      <url>https://s01.oss.sonatype.org/content/repositories/snapshots</url>
+      <snapshots>
+        <enabled>true</enabled>
+      </snapshots>
+      <releases>
+        <enabled>true</enabled>
+      </releases>
+    </repository>
+    <repository>
+      <id>aliyunmaven</id>
+      <url>https://maven.aliyun.com/repository/public</url>
+      <releases>
+        <enabled>true</enabled>
+      </releases>
+      <snapshots>
+        <enabled>false</enabled>
+      </snapshots>
+    </repository>
+  </repositories>
+
+  <build>
+    <plugins>
+      <plugin>
+        <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-compiler-plugin</artifactId>
+        <version>3.8.1</version>
+        <configuration>
+          <source>17</source>
+          <target>17</target>
+          <encoding>UTF-8</encoding>
+        </configuration>
+      </plugin>
+
+      <!-- 指定主类 -->
+      <plugin>
+        <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-jar-plugin</artifactId>
+        <version>3.2.0</version>
+        <configuration>
+          <archive>
+            <manifest>
+              <addClasspath>true</addClasspath>
+              <classpathPrefix>lib/</classpathPrefix>
+              <mainClass>org.demo.Main</mainClass>
+            </manifest>
+          </archive>
+        </configuration>
+      </plugin>
+
+      <!-- 打包所有依赖到一个可执行jar -->
+      <plugin>
+        <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-assembly-plugin</artifactId>
+        <version>3.3.0</version>
+        <configuration>
+          <finalName>todo-java-cef-${project.version}</finalName>
+          <appendAssemblyId>false</appendAssemblyId>
+          <archive>
+            <manifest>
+              <mainClass>org.demo.Main</mainClass>
+            </manifest>
+          </archive>
+          <descriptorRefs>
+            <descriptorRef>jar-with-dependencies</descriptorRef>
+          </descriptorRefs>
+        </configuration>
+        <executions>
+          <execution>
+            <id>make-assembly</id>
+            <phase>package</phase>
+            <goals>
+              <goal>single</goal>
+            </goals>
+          </execution>
+        </executions>
+      </plugin>
+
+      <!-- 用于直接从Maven运行程序 -->
+      <plugin>
+        <groupId>org.codehaus.mojo</groupId>
+        <artifactId>exec-maven-plugin</artifactId>
+        <version>3.0.0</version>
+        <configuration>
+          <mainClass>org.demo.Main</mainClass>
+        </configuration>
+      </plugin>
+
+      <!-- 复制文件到build目录 -->
+      <plugin>
+        <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-antrun-plugin</artifactId>
+        <version>3.1.0</version>
+        <executions>
+          <execution>
+            <id>copy-files-to-build</id>
+            <phase>package</phase>
+            <goals>
+              <goal>run</goal>
+            </goals>
+            <configuration>
+              <target>
+                <!-- 创建build目录 -->
+                <mkdir dir="${project.basedir}/target/build"/>
+
+                <!-- 复制JAR文件到build目录 -->
+                <copy todir="${project.basedir}/target/build" flatten="true">
+                  <fileset dir="${project.build.directory}">
+                    <include name="todo-java-cef-${project.version}.jar"/>
+                  </fileset>
+                </copy>
+
+                <!-- 复制runtimes文件夹到build目录 -->
+                <copy todir="${project.basedir}/target/build/runtimes">
+                  <fileset dir="${project.basedir}/runtimes">
+                    <include name="**/*"/>
+                  </fileset>
+                </copy>
+
+                <!-- 复制static目录 -->
+                <copy todir="${project.basedir}/target/build/static">
+                  <fileset dir="${project.basedir}/static">
+                    <include name="**/*"/>
+                  </fileset>
+                </copy>
+
+                <!-- 输出成功信息 -->
+                <echo message="Files copied to build directory successfully!"/>
+              </target>
+            </configuration>
+          </execution>
+        </executions>
+      </plugin>
+    </plugins>
+  </build>
+
+</project>
